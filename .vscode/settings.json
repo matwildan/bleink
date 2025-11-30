@@ -1,0 +1,9 @@
+{
+    "idf.portWin": "COM13",
+    "files.associations": {
+        "kernel.h": "c",
+        "ble_rgb_service.h": "c",
+        "display.h": "c",
+        "compare": "c"
+    }
+}
