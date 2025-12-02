@@ -9,4 +9,5 @@ target_sources(app PRIVATE
 	include/ble_rgb_service.c
 	include/ble_ess_service.c
 	include/display_epaper_cfb.c
+	include/battery.c
 )

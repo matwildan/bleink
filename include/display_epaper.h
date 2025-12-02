@@ -21,12 +21,25 @@ enum display_rotation {
 int display_epaper_init(void);
 
 /**
- * @brief Update the display with current sensor data
+ * @brief Initialize sensor display with static labels
+ */
+void display_init_sensor_labels(void);
+
+/**
+ * @brief Update only the sensor values (not labels)
  *
  * @param temp_celsius Temperature in Celsius * 100 (e.g., 2250 = 22.50°C)
  * @param humidity_percent Humidity in percent * 100 (e.g., 5500 = 55.00%)
  */
 void display_update_sensors(int16_t temp_celsius, uint16_t humidity_percent);
+
+/**
+ * @brief Update battery display
+ *
+ * @param voltage_mv Battery voltage in millivolts
+ * @param percentage Battery percentage (0-100)
+ */
+void display_update_battery(uint16_t voltage_mv, uint8_t percentage);
 
 /**
  * @brief Show a message on the display

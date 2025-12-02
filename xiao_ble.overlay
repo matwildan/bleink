@@ -44,6 +44,13 @@
 				vcom = <0x26>;
 				border-waveform = <0x05>;
 			};
+
+			partial {
+				gdv = [15];
+				sdv = [41 a8 32];
+				vcom = <0x26>;
+				border-waveform = <0x01>;
+			};
 		};
 	};
 };

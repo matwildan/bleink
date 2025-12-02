@@ -8,6 +8,7 @@
 #include "../include/ble_rgb_service.h"
 #include "../include/ble_ess_service.h"
 #include "../include/display_epaper.h"
+#include "../include/battery.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -102,6 +103,21 @@ int main(void)
 		LOG_ERR("Display init failed (err %d)", err);
 		return 0;
 	}
+
+	/* Initialize battery monitoring */
+	err = battery_init();
+	if (err) {
+		LOG_ERR("Battery init failed (err %d)", err);
+		/* Continue anyway - not critical */
+	}
+
+	/* Initialize sensor display labels */
+	display_init_sensor_labels();
+
+	/* Read and display initial battery level */
+	uint16_t voltage = battery_read_voltage();
+	uint8_t battery_pct = battery_get_percentage(voltage);
+	display_update_battery(voltage, battery_pct);
 
 	/* Main loop - just sleep */
 	while (1) {

@@ -1,5 +1,6 @@
 #include "ble_ess_service.h"
 #include "display_epaper.h"
+#include "battery.h"
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -101,6 +102,11 @@ static void update_sensor_data(struct k_work *work)
 
 	/* Update display */
 	display_update_sensors(temperature, humidity);
+
+	/* Update battery display */
+	uint16_t voltage = battery_read_voltage();
+	uint8_t battery_pct = battery_get_percentage(voltage);
+	display_update_battery(voltage, battery_pct);
 
 	/* Schedule next update in 10 seconds */
 	k_work_schedule(&sensor_update_work, K_SECONDS(10));
