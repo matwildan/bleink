@@ -165,7 +165,7 @@ uint8_t battery_get_percentage(uint16_t mv)
     };
 
     // Above max → 100%
-    if (mv >= 4200) return 100;
+    if (mv >= 4000) return 100;
     // Below min → 0%
     if (mv <= 3300) return 0;
 

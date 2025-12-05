@@ -56,4 +56,29 @@ void display_show_message(const char *message);
  */
 int display_set_rotation(enum display_rotation rotation);
 
+/**
+ * @brief Draw a monochrome image on the display
+ *
+ * @param image_data Pointer to image data (1 bit per pixel, row-major order)
+ * @param x X coordinate (0-249)
+ * @param y Y coordinate (0-119)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @return 0 on success, negative errno on failure
+ */
+int display_draw_image(const uint8_t *image_data, uint16_t x, uint16_t y,
+                       uint16_t width, uint16_t height);
+
+/**
+ * @brief Add a temperature reading to the graph history
+ *
+ * @param temp_celsius Temperature in Celsius * 100 (e.g., 2250 = 22.50°C)
+ */
+void display_add_temp_reading(int16_t temp_celsius);
+
+/**
+ * @brief Draw the temperature graph
+ */
+void display_draw_graph(void);
+
 #endif /* DISPLAY_EPAPER_H */
