@@ -15,9 +15,10 @@ static enum display_rotation current_rotation = DISPLAY_ROTATION_180;
 
 /* Temperature graph data */
 #define GRAPH_MAX_POINTS 50  /* Number of data points to store */
-#define GRAPH_X 0            /* Graph X position */
+#define GRAPH_LABEL_WIDTH 24 /* Width reserved for Y-axis labels */
+#define GRAPH_X 24           /* Graph X position (leave space for labels) */
 #define GRAPH_Y 72           /* Graph Y position (below icons) */
-#define GRAPH_WIDTH 250      /* Graph width (full display width) */
+#define GRAPH_WIDTH 226      /* Graph width (250 - 24 for labels) */
 #define GRAPH_HEIGHT 48      /* Graph height (72 to 120) */
 
 static int16_t temp_history[GRAPH_MAX_POINTS];
@@ -299,6 +300,7 @@ void display_draw_graph(void)
 {
 	struct cfb_position pos;
 	int ret;
+	char label_buf[16];
 
 	if (temp_history_count < 2) {
 		LOG_DBG("Not enough data points to draw graph");
@@ -321,19 +323,44 @@ void display_draw_graph(void)
 		}
 	}
 
-	/* Add some padding to min/max */
+	/* Add some padding to min/max (reduced for more precision) */
 	int16_t temp_range = max_temp - min_temp;
-	if (temp_range < 500) {  /* Minimum 5°C range */
-		temp_range = 500;
+	if (temp_range < 200) {  /* Minimum 2°C range for better precision */
+		temp_range = 200;
 		int16_t mid = (max_temp + min_temp) / 2;
-		min_temp = mid - 250;
-		max_temp = mid + 250;
+		min_temp = mid - 100;
+		max_temp = mid + 100;
+	} else {
+		/* Add 10% padding to min/max */
+		int16_t padding = temp_range / 10;
+		min_temp -= padding;
+		max_temp += padding;
+		temp_range = max_temp - min_temp;
 	}
 
 	LOG_INF("Drawing graph: min=%d.%02d, max=%d.%02d, points=%d",
 		min_temp / 100, abs(min_temp % 100),
 		max_temp / 100, abs(max_temp % 100),
 		temp_history_count);
+
+	/* Calculate middle temperature */
+	int16_t mid_temp = (max_temp + min_temp) / 2;
+
+	/* Draw Y-axis labels (temperature values) OUTSIDE the graph box */
+	/* Format and display max temperature at top, left of graph box */
+	snprintf(label_buf, sizeof(label_buf), "%d",
+		max_temp / 100);
+	cfb_print(display_dev, label_buf, 0, GRAPH_Y + 1);
+
+	/* Format and display min temperature at bottom, left of graph box */
+	snprintf(label_buf, sizeof(label_buf), "%d",
+		min_temp / 100);
+	cfb_print(display_dev, label_buf, 0, GRAPH_Y + GRAPH_HEIGHT - 9);
+
+	/* Display middle temperature value */
+	snprintf(label_buf, sizeof(label_buf), "%d",
+		mid_temp / 100);
+	cfb_print(display_dev, label_buf, 0, GRAPH_Y + GRAPH_HEIGHT / 2 - 4);
 
 	/* Draw graph axes (border) */
 	/* Top line */
@@ -361,6 +388,31 @@ void display_draw_graph(void)
 	for (uint16_t y = GRAPH_Y; y < GRAPH_Y + GRAPH_HEIGHT; y++) {
 		pos.x = GRAPH_X + GRAPH_WIDTH - 1;
 		pos.y = y;
+		cfb_draw_point(display_dev, &pos);
+	}
+
+	/* Draw horizontal grid lines for temperature reference */
+	/* Top grid line (max temp) */
+	uint16_t grid_y_max = GRAPH_Y;
+	for (uint16_t x = GRAPH_X + 1; x < GRAPH_X + GRAPH_WIDTH - 1; x += 4) {
+		pos.x = x;
+		pos.y = grid_y_max;
+		cfb_draw_point(display_dev, &pos);
+	}
+
+	/* Middle grid line (mid temp) */
+	uint16_t grid_y_mid = GRAPH_Y + GRAPH_HEIGHT / 2;
+	for (uint16_t x = GRAPH_X + 1; x < GRAPH_X + GRAPH_WIDTH - 1; x += 4) {
+		pos.x = x;
+		pos.y = grid_y_mid;
+		cfb_draw_point(display_dev, &pos);
+	}
+
+	/* Bottom grid line (min temp) */
+	uint16_t grid_y_min = GRAPH_Y + GRAPH_HEIGHT - 1;
+	for (uint16_t x = GRAPH_X + 1; x < GRAPH_X + GRAPH_WIDTH - 1; x += 4) {
+		pos.x = x;
+		pos.y = grid_y_min;
 		cfb_draw_point(display_dev, &pos);
 	}
 
