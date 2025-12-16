@@ -76,17 +76,13 @@ int display_epaper_init(void)
 	/* Invert display for black text on white background */
 	cfb_framebuffer_invert(display_dev);
 
-	/* Draw Hello World in middle of display */
-	/* With 120px height and 8px font, center is at row 7 (rows/2 = 15/2 = 7) */
-	ret = cfb_print(display_dev, "Hello World!", 0, 8);
+	/* Draw bleink logo in middle of display */
+	/* Logo is 128x128 pixels, center it on 250x120 display */
+	/* X: (250 - 128) / 2 = 61, Y: (120 - 128) / 2 = -4 (clipped to 0, will overflow) */
+	ret = display_draw_image(bleink_logo, 61, 5, ICON_BLEINK_LOGO_WIDTH, ICON_BLEINK_LOGO_HEIGHT);
 	if (ret != 0) {
-		LOG_ERR("CFB print failed: %d", ret);
+		LOG_ERR("Failed to draw logo: %d", ret);
 	}
-
-	/* Draw thermometer icon on right side BEFORE finalize */
-	/* x = 250 - 64 = 186, y = 24 (must be multiple of 8 for SSD16xx) */
-	display_draw_image(icon_thermometer, 186, 24,
-			   ICON_THERMOMETER_WIDTH, ICON_THERMOMETER_HEIGHT);
 
 	cfb_framebuffer_finalize(display_dev);
 
@@ -94,7 +90,7 @@ int display_epaper_init(void)
 
 	/* GREEN LED - Success! */
 	rgb_led_set_color(0, 255, 0);
-	k_sleep(K_SECONDS(2));
+	k_sleep(K_SECONDS(3));
 	rgb_led_set_color(0, 0, 0);
 
 	return 0;
@@ -422,14 +418,25 @@ void display_draw_graph(void)
 		x_step = 1;
 	}
 
+	/* Calculate the starting index for oldest data in circular buffer */
+	uint8_t oldest_index = 0;
+	if (temp_history_count >= GRAPH_MAX_POINTS) {
+		/* Buffer is full, oldest data is at temp_history_index */
+		oldest_index = temp_history_index;
+	}
+
 	for (uint8_t i = 0; i < temp_history_count - 1; i++) {
 		/* Calculate positions */
 		uint16_t x1 = GRAPH_X + 1 + (i * x_step);
 		uint16_t x2 = GRAPH_X + 1 + ((i + 1) * x_step);
 
+		/* Read from circular buffer in chronological order */
+		uint8_t idx1 = (oldest_index + i) % GRAPH_MAX_POINTS;
+		uint8_t idx2 = (oldest_index + i + 1) % GRAPH_MAX_POINTS;
+
 		/* Scale temperature to graph height */
-		int16_t temp1 = temp_history[i];
-		int16_t temp2 = temp_history[i + 1];
+		int16_t temp1 = temp_history[idx1];
+		int16_t temp2 = temp_history[idx2];
 
 		uint16_t y1 = GRAPH_Y + GRAPH_HEIGHT - 2 -
 			      ((temp1 - min_temp) * (GRAPH_HEIGHT - 4) / temp_range);
